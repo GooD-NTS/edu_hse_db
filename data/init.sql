@@ -25,6 +25,7 @@ create schema edu
 		created_at timestamp not null default current_timestamp,
 		current_app_version_id int,
 		current_hardware_info_id int,
+		last_report timestamp,
 		foreign key (current_app_version_id) references app_version(id),
 		foreign key (current_hardware_info_id) references hardware_info(id)
 	)
@@ -57,3 +58,22 @@ create schema edu
 		data text not null,
 		foreign key (report_id) references crash_report(id)
 	);
+	
+-- create trigger function 
+create or replace function update_last_report() 
+returns trigger as $$
+begin
+	-- update last_report in app_user table
+	update app_user
+	set last_report = current_timestamp
+	where id = new.user_id;
+	
+	return new;
+end;
+$$ language plpgsql;
+
+-- create trigger
+create trigger trigger_update_last_report
+after insert on edu.crash_report
+for each row
+execute function update_last_report();
